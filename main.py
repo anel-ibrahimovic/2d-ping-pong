@@ -312,7 +312,7 @@ def main():
         draw_table(screen, screen_width, screen_height)
 
         bottom_paddle.draw(screen, angle=45 if bottom_paddle.x < table_x + table_width // 2 else -45)
-        top_paddle.draw(screen, angle=-135)
+        top_paddle.draw(screen, angle=-135 if top_paddle.x > table_x + table_width // 2 else 135)
 
         ball.draw(screen)
 
