@@ -57,6 +57,9 @@ class Game:
         # Track who last hit the ball ('player' or 'ai')
         self.last_hit_by = None
 
+        self.point_scored_time = None
+        self.reset_delay = 1000
+
         self.reset_ball_for_serve()
         self.game_over = False
 
@@ -105,31 +108,37 @@ class Game:
                 self.__init__()
 
             if not self.game_over:
-                self.handle_input()
-                self.top_paddle.ai_move(self.ball.x, self.table_x, self.table_width)
+                if not self.point_scored_time:
+                    self.handle_input()
+                    self.top_paddle.ai_move(self.ball.x, self.table_x, self.table_width)
 
-                # Serve logic
-                if not self.serve_active:
-                    if self.serve_side == 'player' and keys[pygame.K_UP]:
-                        self.ball.speed_y = -9
-                        self.ball.speed_x = 0
-                        if keys[pygame.K_LEFT]:
-                            self.ball.speed_x = -7.5
-                        elif keys[pygame.K_RIGHT]:
-                            self.ball.speed_x = 7.5
-                        self.serve_active = True
-                    elif self.serve_side == 'ai':
-                        if not self.ai_serve_timer_started:
-                            self.ai_serve_start_time = pygame.time.get_ticks()
-                            self.ai_serve_timer_started = True
-                        elif pygame.time.get_ticks() - self.ai_serve_start_time >= self.ai_serve_delay:
+                    # Serve logic
+                    if not self.serve_active:
+                        if self.serve_side == 'player' and keys[pygame.K_UP]:
+                            self.ball.speed_y = -11
                             self.ball.speed_x = 0
-                            self.ball.speed_y = 9
+                            if keys[pygame.K_LEFT]:
+                                self.ball.speed_x = -9.5
+                            elif keys[pygame.K_RIGHT]:
+                                self.ball.speed_x = 9.5
                             self.serve_active = True
-                            self.ai_serve_timer_started = False
+                        elif self.serve_side == 'ai':
+                            if not self.ai_serve_timer_started:
+                                self.ai_serve_start_time = pygame.time.get_ticks()
+                                self.ai_serve_timer_started = True
+                            elif pygame.time.get_ticks() - self.ai_serve_start_time >= self.ai_serve_delay:
+                                self.ball.speed_x = 0
+                                self.ball.speed_y = 11
+                                self.serve_active = True
+                                self.ai_serve_timer_started = False
 
-                self.ball.update()
-                self.check_collision_and_score()
+                    self.ball.update()
+                    self.check_collision_and_score()
+
+                else:
+                    if pygame.time.get_ticks() - self.point_scored_time >= self.reset_delay:
+                        self.reset_ball_for_serve()
+                        self.point_scored_time = None
 
             draw_table(self.screen, self.screen_width, self.screen_height)
             self.bottom_paddle.draw(self.screen, angle=45 if self.bottom_paddle.x < self.table_x + self.table_width // 2 else -45)
@@ -174,16 +183,14 @@ class Game:
                            (self.last_hit_by == 'ai' and ball_in_bottom_half)
 
         if not ball_crossed_net:
-            # Ball hasn't crossed net but is out of bounds -> point to opponent of last hitter
             if out_left or out_right or out_top or out_bottom:
                 self.award_point('ai' if self.last_hit_by == 'player' else 'player')
         else:
-            # Ball crossed net; if it went far out (>200 pixels), point to last hitter
             went_far_out = (
-                (out_left and dist_left >= 200) or
-                (out_right and dist_right >= 200) or
-                (out_top and dist_top >= 200) or
-                (out_bottom and dist_bottom >= 200)
+                (out_left and dist_left >= 300) or
+                (out_right and dist_right >= 300) or
+                (out_top and dist_top >= 300) or
+                (out_bottom and dist_bottom >= 300)
             )
             if went_far_out:
                 self.award_point(self.last_hit_by)
@@ -221,4 +228,4 @@ class Game:
         if self.serve_count >= 2:
             self.serve_count = 0
             self.serve_side = 'player' if self.serve_side == 'ai' else 'ai'
-        self.reset_ball_for_serve()
+        self.point_scored_time = pygame.time.get_ticks()
