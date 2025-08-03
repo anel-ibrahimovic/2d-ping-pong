@@ -102,7 +102,7 @@ class Game:
 
             keys = pygame.key.get_pressed()
             if keys[pygame.K_r] and self.game_over:
-                self.__init__()  # Reset all state
+                self.__init__()
 
             if not self.game_over:
                 self.handle_input()
