@@ -1,4 +1,4 @@
-2d Ping Pong Game with Score
+2D Ping Pong Game with Score
 
 Built with PyGame.
 Player vs an AI opponent.
